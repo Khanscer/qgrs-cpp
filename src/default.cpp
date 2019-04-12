@@ -115,6 +115,7 @@ int main(int argc, char * argv[]) {
 	bool outfile = false;
 	char sub;
 	bool format = false;
+	bool header_printed = false;
 
 	for ( int i = 1; i < argc; i++ ) {
 		string arg = std::string(argv[i]);
@@ -167,39 +168,35 @@ int main(int argc, char * argv[]) {
 	std::istream & in = (infile ? in_fs : std::cin);
 	std::ostream & out = (outfile ? out_fs : std::cout);
 
+	int g4_id = 1;
+
 	string buff;
 	while (std::getline(in, buff))
 	{
-    	sequence += buff;
-	}
+	sequence = buff;
 
 	pos_length = log10(sequence.length()) + 2;
-
-	if ( json) {
-		out << findJSON(sequence, overlaps, tetrads, gscore);
+		
+	if ( header && !header_printed ) {
+		print_heading(out, raw, sep);
+		header_printed = true;
 	}
-	else {
-		out << endl;
 		
-		if ( header ) {
-			print_heading(out, raw, sep);
-		}
-		
-		vector<G4> results = find(sequence, overlaps, tetrads, gscore);
-		int id = 1;
-		if ( results.size() == 0 ) {
-			cerr << "No QGRS found" << endl;
-		}
-		for (auto &qgrs : results) {
-			print(out, std::to_string(id), qgrs, raw, sep, format, sub);
-			int overlap_id = 1;
-			for (auto &overlap : qgrs.overlaps) {
-				string overlap_id_str = std::to_string(id) + "." + std::to_string(overlap_id++);
-				print(cout, overlap_id_str, overlap, raw, sep, format, sub);
+	vector<G4> results = find(sequence, overlaps, tetrads, gscore);
 
-			}
-			id++;
+	if ( results.size() == 0 ) {
+		cerr << "No QGRS found" << endl;
+	}
+
+	for (auto &qgrs : results) {
+		print(out, std::to_string(g4_id), qgrs, raw, sep, format, sub);
+		int overlap_id = 1;
+		for (auto &overlap : qgrs.overlaps) {
+			string overlap_id_str = std::to_string(g4_id) + "." + std::to_string(overlap_id++);
+			print(cout, overlap_id_str, overlap, raw, sep, format, sub);
 		}
+		g4_id++;
+	}
 	}
 	if ( outfile ) out_fs.close();
 }
